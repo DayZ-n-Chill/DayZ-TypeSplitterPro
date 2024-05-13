@@ -1,6 +1,7 @@
 # DayZ Type Splitter Pro
 
 I've developed a custom script to manage and format the types.xml data for configuring DayZ's in-game economy. This script was created out of some minor dissatisfaction with existing tools that I felt lacked sufficient organization.
+
 ![Instructions](https://steamuserimages-a.akamaihd.net/ugc/2461857409008788486/50D33DD606005D7675F1073542EF998B056B0AA2/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false)
 
 ## What makes it pro?
