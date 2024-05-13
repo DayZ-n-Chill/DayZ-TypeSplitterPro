@@ -43,6 +43,8 @@ Feel free to edit this as you need. It is free to use as you will. The file is i
 2. Double click the typeSplitter.py file
 3. Watch the magic and Enjoy!
 
+![Instructions](https://steamuserimages-a.akamaihd.net/ugc/2461857409008788486/50D33DD606005D7675F1073542EF998B056B0AA2/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false)
+
 ### Alternate Usage
 
 I use VS Code Python Extensions so I can just push F5 to run Batch and Python code. I recommend it.
