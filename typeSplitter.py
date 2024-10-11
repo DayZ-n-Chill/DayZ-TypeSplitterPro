@@ -118,8 +118,8 @@ def organize_xml_contents():
     save_category_files(categorized_data, types_dir)
 
     cfgeconomycore_file_path = find_cfgeconomycore_xml()
-    add_ce_elements_to_cfgeconomycore([f"{category}.xml" for category in categorized_data if categorized_data[category]], cfgeconomycore_file_path)
-    format_cfgeconomycore(cfgeconomycore_file_path)
+    add_ce_elements_to_cfgeconomycore([f"{category}.xml" for category in categorized_data if categorized_data[category]])
+    format_cfgeconomycore()
 
 # Execution
 organize_xml_contents()
