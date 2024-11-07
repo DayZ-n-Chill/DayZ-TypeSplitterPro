@@ -91,7 +91,8 @@ def save_category_files(categorized_data, types_dir):
 def categorize_elements(root):
     # Categorize elements in the XML based on their names or attributes
     categories = {
-        'ammo': lambda name: name.startswith(('AmmoBox_', 'Ammo_')),
+        'ammo': lambda name: name.startswith('Ammo_'),
+        'ammo_boxes': lambda name: name.startswith('AmmoBox_'),
         'animals': lambda name: name.startswith('Animal_'),
         'vehicles': lambda name: name.startswith(('Offroad', 'CivilianSedan', 'Hatchback', 'Sedan', 'Truck_01')),
         'wrecks': lambda name: name.startswith(('Land_Wreck_', 'Land_wreck_', 'Wreck_')),
@@ -99,8 +100,8 @@ def categorize_elements(root):
         'staticObjs': lambda name: name.startswith('StaticObj_'),
         'zombies': lambda name: name.startswith(('ZmbM_', 'ZmbF_')),
         'seasonal': lambda name: any(usage.get('name') == 'SeasonalEvent' for usage in type_element.findall('usage')) or name.startswith(('ChristmasTree', 'Bonfire', 'EasterEgg')),
-        'containers': lambda name: name.startswith('WaterBottle'),
-        'vehicleParts': lambda name: name.startswith('lootdispatch'),
+        'containers': lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'containers',
+        'vehicleParts': lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'lootdispatch',
         'uncategorized': lambda name: True  # Anything that doesn't match the above categories
     }
 
@@ -110,7 +111,11 @@ def categorize_elements(root):
     for type_element in root.findall('type'):
         name = type_element.get('name')
         for category, condition in categories.items():
-            if condition(name):
+            # Use element itself for 'containers' and 'vehicleParts' to allow category-based assignment
+            if category in ['containers', 'vehicleParts'] and condition(type_element):
+                categorized_data[category].append(type_element)
+                break
+            elif category not in ['containers', 'vehicleParts'] and condition(name):
                 categorized_data[category].append(type_element)
                 break
 
