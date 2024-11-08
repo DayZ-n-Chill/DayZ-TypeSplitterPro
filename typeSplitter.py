@@ -84,24 +84,33 @@ def save_category_files(categorized_data, types_dir):
         category_file_path = os.path.join(types_dir, f"{category}.xml")
         category_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<types>\n'
         category_xml += ''.join([ET.tostring(element, encoding='unicode') for element in elements])
-        category_xml += '</types>'
+        category_xml += '</types>\n'
         with open(category_file_path, 'w') as f:
             f.write(category_xml)
 
 def categorize_elements(root):
     # Categorize elements in the XML based on their names or attributes
     categories = {
-        'ammo': lambda name: name.startswith('Ammo_'),
-        'ammo_boxes': lambda name: name.startswith('AmmoBox_'),
-        'animals': lambda name: name.startswith('Animal_'),
-        'vehicles': lambda name: name.startswith(('Offroad', 'CivilianSedan', 'Hatchback', 'Sedan', 'Truck_01')),
-        'wrecks': lambda name: name.startswith(('Land_Wreck_', 'Land_wreck_', 'Wreck_')),
-        'events': lambda name: name.startswith(('Land_Container_', 'Land_Train_', 'ContaminatedArea_Dynamic')),
-        'staticObjs': lambda name: name.startswith('StaticObj_'),
-        'zombies': lambda name: name.startswith(('ZmbM_', 'ZmbF_')),
-        'seasonal': lambda name: any(usage.get('name') == 'SeasonalEvent' for usage in type_element.findall('usage')) or name.startswith(('ChristmasTree', 'Bonfire', 'EasterEgg')),
-        'containers': lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'containers',
-        'vehicleParts': lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'lootdispatch',
+        # organized by name to make better categorization
+        'ammo':          lambda name: name.startswith('Ammo_'),
+        'armbands':      lambda name: name.startswith('Armband_'),
+        'ammo_boxes':    lambda name: name.startswith('AmmoBox_'),
+        'animals':       lambda name: name.startswith('Animal_'),
+        'contamination': lambda name: name.startswith(('Land_Container_', 'Land_Train_', 'ContaminatedArea_Dynamic')),
+        'flags':         lambda name: name.startswith('Flag_'),
+        'staticObjs':    lambda name: name.startswith('StaticObj_'),
+        'vehicles':      lambda name: name.startswith(('Offroad', 'CivilianSedan', 'Hatchback', 'Sedan', 'Truck_01', 'Boat_')),
+        'wrecks':        lambda name: name.startswith(('Land_Wreck_', 'Land_wreck_', 'Wreck_')),
+        'zombies':       lambda name: name.startswith(('ZmbM_', 'ZmbF_', 'Zmbm_')),
+        # Seasonal
+        'seasonal':      lambda name: any(usage.get('name') == 'SeasonalEvent' for usage in type_element.findall('usage')) or name.startswith(('ChristmasTree', 'Bonfire', 'EasterEgg', 'Aniversary')),
+        # Organized by category the way bohemia intended it.
+        'clothes':       lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'clothes',
+        'containers':    lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'containers',
+        'food':          lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'food',
+        'tools':         lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'tools',
+        'weapons':       lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'weapons',
+        'vehicleParts':  lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'lootdispatch',
         'uncategorized': lambda name: True  # Anything that doesn't match the above categories
     }
 
@@ -111,12 +120,14 @@ def categorize_elements(root):
     for type_element in root.findall('type'):
         name = type_element.get('name')
         for category, condition in categories.items():
-            # Use element itself for 'containers' and 'vehicleParts' to allow category-based assignment
-            if category in ['containers', 'vehicleParts'] and condition(type_element):
+            # Use element itself for 'containers', 'vehicleParts', 'weapons', and 'tools' to allow category-based assignment
+            if category in ['containers', 'vehicleParts', 'weapons', 'tools', 'food', 'clothes'] and condition(type_element):
                 categorized_data[category].append(type_element)
+                logging.info(f"Categorized element '{name}' as '{category}'")
                 break
-            elif category not in ['containers', 'vehicleParts'] and condition(name):
+            elif category not in ['containers', 'vehicleParts', 'weapons', 'tools', 'food', 'clothes'] and condition(name):
                 categorized_data[category].append(type_element)
+                logging.info(f"Categorized element '{name}' as '{category}'")
                 break
 
     return categorized_data
