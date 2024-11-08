@@ -14,12 +14,15 @@ Other splitters break down the basic categories but also leave an other.xml file
 
 ### XML Created after the split
 
+- ammo_boxes.xml
 - ammo.xml
 - animals.xml
+- armbands.xml
 - clothes.xml
 - containers.xml
-- events.xml
+- contamination.xml
 - explosives.xml
+- flags.xml
 - food.xml
 - seasonal.xml
 - staticObjs.xml
@@ -52,3 +55,25 @@ I use VS Code Python Extensions so I can just push F5 to run Batch and Python co
 ## Join the Discord
 
 For support with this or any of my other mods, join the [DayZ n' Chill - Official Discord](https://discord.gg).
+
+## Additional Features and Updates
+
+### Improved File Categorization
+
+We've added more specific categories to reduce the need for a large uncategorized.xml file. This means fewer items left without a proper category, making the in-game economy easier to manage and understand. The tool now categorizes items more thoroughly, minimizing the need for manual adjustments.
+
+### Automatic Backup and Configuration Update
+
+The script now automatically creates a backup of your original types.xml file before making any changes. Additionally, it updates the cfgeconomycore.xml to include links to the newly split XML files, saving you the hassle of manually editing these references.
+
+### Enhanced Logging
+
+We've added enhanced logging to the script, which provides more detailed output during the splitting process. This allows you to see exactly what changes are being made, making troubleshooting easier if anything unexpected occurs.
+
+### Customizable Categories
+
+You can now customize the categories directly within the script. This flexibility allows you to add or modify categories based on your specific server setup, ensuring the tool fits your unique needs.
+
+## Feedback and Suggestions
+
+I'm always looking for ways to improve this tool. If you have ideas for categorizing items like the watchtower or fence, or if there are any new features you'd like to see, leave a comment or join the Discord to discuss!
