@@ -2,7 +2,7 @@
 
 I've developed a custom script to manage and format the types.xml data for configuring DayZ's in-game economy. This script was created out of some minor dissatisfaction with existing tools that I felt lacked sufficient organization.
 
-![Instructions](hhttps://cdn.discordapp.com/attachments/1150169601649418250/1304275092544557086/new.png?ex=672ecc56&is=672d7ad6&hm=61f9497271756e0179470c66f4f97f5b6f9f99875bc15ce2d235200d2e2979d9&)
+![Instructions](https://cdn.discordapp.com/attachments/1150169601649418250/1304275092544557086/new.png?ex=672ecc56&is=672d7ad6&hm=61f9497271756e0179470c66f4f97f5b6f9f99875bc15ce2d235200d2e2979d9&)
 
 ## What makes it pro?
 
