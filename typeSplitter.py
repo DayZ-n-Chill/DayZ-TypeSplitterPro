@@ -2,9 +2,10 @@ import xml.etree.ElementTree as ET
 import os
 import logging
 import shutil
+import xml.dom.minidom
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level='INFO', format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Debug mode flag
 DEBUG_MODE = True  # Set to True for debug mode, False for normal mode
@@ -23,18 +24,27 @@ def add_ce_elements_to_cfgeconomycore(files):
         tree = ET.parse(cfgeconomycore_file_path)
         root = tree.getroot()
 
+        # Sort files alphabetically before adding them
+        files = sorted(set(files))  # Sort and remove duplicates
+
+        # Remove any existing 'ce' elements to avoid duplication
+        for ce in root.findall('ce'):
+            root.remove(ce)
+
         # Add each file as a new 'ce' element
         for file in files:
-            ce_element = ET.Element('ce', folder='types')
-            ET.SubElement(ce_element, 'file', name=file, type='types')
-            root.append(ce_element)
+            ce_element = ET.Element('ce', folder='types')  # Create a new 'ce' element with folder attribute set to 'types'
+            ET.SubElement(ce_element, 'file', name=file, type='types')  # Add 'file' sub-element with the appropriate attributes
+            root.append(ce_element)  # Append the new 'ce' element to the root of the XML
 
         # Write changes back to the XML file
         tree.write(cfgeconomycore_file_path, encoding='UTF-8', xml_declaration=True)
         logging.info("Added CE elements to cfgeconomycore.xml")
     except (ET.ParseError, FileNotFoundError) as e:
+        # Handle parsing errors or file not found errors
         logging.error(f"Error: {e}")
     except Exception as e:
+        # Handle any other unexpected errors
         logging.error(f"An unexpected error occurred: {e}")
 
 def format_cfgeconomycore():
@@ -49,6 +59,7 @@ def format_cfgeconomycore():
         formatted_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>\n<economycore>\n\n'
         formatted_xml += '\t<classes>\n'
         for child in root.find('classes').iter('rootclass'):
+            # Add each 'rootclass' element to the formatted output
             formatted_xml += f'\t\t<{child.tag} name="{child.get("name")}"'
             formatted_xml += ''.join([f' {k}="{v}"' for k, v in child.items() if k != 'name'])
             formatted_xml += '/>\n'
@@ -57,16 +68,17 @@ def format_cfgeconomycore():
         # Add 'defaults' section to the formatted XML
         formatted_xml += '\t<defaults>\n'
         for child in root.find('defaults'):
+            # Add each 'default' element to the formatted output
             formatted_xml += f'\t\t<{child.tag} name="{child.get("name")}" value="{child.get("value")}"/>\n'
         formatted_xml += '\t</defaults>\n\n'
 
-        # Add 'ce' elements for each categorized file
-        ce_files = [(ce.find('file').get('name'), ce.find('file').get('type')) for ce in root.findall('ce')]
+        # Add 'ce' elements for each categorized file in alphabetical order
+        ce_files = sorted([(ce.find('file').get('name'), ce.find('file').get('type')) for ce in root.findall('ce')])
         if ce_files:
             formatted_xml += '\t<ce folder="types">\n'
             formatted_xml += ''.join([f'\t\t<file name="{name}" type="{type}" />\n' for name, type in ce_files])
             formatted_xml += '\t</ce>\n'
-        formatted_xml += '</economycore>'
+        formatted_xml += '</economycore>\n'  # Added newline here for blank line at the end
 
         # Write the formatted content back to the file
         with open(cfgeconomycore_file_path, 'w') as f:
@@ -74,24 +86,42 @@ def format_cfgeconomycore():
 
         logging.info("Formatted cfgeconomycore.xml")
     except (ET.ParseError, FileNotFoundError) as e:
+        # Handle parsing errors or file not found errors
         logging.error(f"Error: {e}")
     except Exception as e:
+        # Handle any other unexpected errors
         logging.error(f"An unexpected error occurred: {e}")
 
 def save_category_files(categorized_data, types_dir):
     # Save each category of elements to its own XML file in the specified directory
     for category, elements in categorized_data.items():
         category_file_path = os.path.join(types_dir, f"{category}.xml")
-        category_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<types>\n'
-        category_xml += ''.join([ET.tostring(element, encoding='unicode') for element in elements])
-        category_xml += '</types>\n'
-        with open(category_file_path, 'w') as f:
-            f.write(category_xml)
+
+        # Create the root 'types' element
+        root = ET.Element('types')
+
+        # Append all categorized elements to the root
+        for element in elements:
+            root.append(element)
+
+        # Convert the XML to a string
+        rough_string = ET.tostring(root, encoding='utf-8')
+        reparsed = xml.dom.minidom.parseString(rough_string)
+
+        # Format the XML with proper indentation
+        formatted_xml = reparsed.toprettyxml(indent="  ")
+
+        # Remove extra blank lines added by `toprettyxml`
+        formatted_xml = '\n'.join([line for line in formatted_xml.splitlines() if line.strip()])
+
+        # Write the formatted XML to the file
+        with open(category_file_path, 'w', encoding='utf-8') as f:
+            f.write(formatted_xml + '\n')  # Added newline here for blank line at the end
 
 def categorize_elements(root):
     # Categorize elements in the XML based on their names or attributes
     categories = {
-        # organized by name to make better categorization
+        # Organized by specific prefixes or conditions for categorization
         'ammo':          lambda name: name.startswith('Ammo_'),
         'armbands':      lambda name: name.startswith('Armband_'),
         'ammo_boxes':    lambda name: name.startswith('AmmoBox_'),
@@ -102,13 +132,30 @@ def categorize_elements(root):
         'vehicles':      lambda name: name.startswith(('Offroad', 'CivilianSedan', 'Hatchback', 'Sedan', 'Truck_01', 'Boat_')),
         'wrecks':        lambda name: name.startswith(('Land_Wreck_', 'Land_wreck_', 'Wreck_')),
         'zombies':       lambda name: name.startswith(('ZmbM_', 'ZmbF_', 'Zmbm_')),
-        # Seasonal
+        # Seasonal elements based on their name or usage attribute
         'seasonal':      lambda name: any(usage.get('name') == 'SeasonalEvent' for usage in type_element.findall('usage')) or name.startswith(('ChristmasTree', 'Bonfire', 'EasterEgg', 'Aniversary')),
-        # Organized by category the way bohemia intended it.
-        'clothes':       lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'clothes',
-        'containers':    lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'containers',
-        'food':          lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'food',
-        'tools':         lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'tools',
+        # Organized by category attribute for more specific assignment
+        'clothes':       lambda type_element: (
+                            type_element.get('name') in ['GhillieSuit_Tan', 'GhillieAtt_Winter', 'OMKJacket_Navy', 'OMKPants_Navy', 'PlateCarrierHolster_Winter']
+                        ) or (
+                            type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'clothes'
+                        ),
+        'explosives':    lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'explosives',
+        'containers':    lambda type_element: (
+                            type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'containers'
+                        ) or type_element.get('name') in [
+                            'FilteringBottle', 'GlassBottle', 'WaterBottle'
+                        ],
+        'food':          lambda type_element: (
+                            type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'food'
+                        ) or type_element.get('name') in [
+                            'DeadFox', 'ReindeerPelt', 'ReindeerSteakMeat', 'SteelheadTrout', 
+                            'SteelheadTroutFilletMeat', 'WalleyePollock', 'WalleyePollockFilletMeat',
+                            'CraterellusMushroom', 'RedCaviar'
+                        ],
+        'tools':         lambda type_element: (
+                            type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'tools'
+                        ) and type_element.get('name') not in ['GhillieSuit_Tan', 'GhillieAtt_Winter', 'OMKJacket_Navy', 'OMKPants_Navy', 'PlateCarrierHolster_Winter'],
         'weapons':       lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'weapons',
         'vehicleParts':  lambda type_element: type_element.find('category') is not None and type_element.find('category').get('name', '').lower() == 'lootdispatch',
         'uncategorized': lambda name: True  # Anything that doesn't match the above categories
@@ -118,14 +165,14 @@ def categorize_elements(root):
 
     # Iterate over all 'type' elements and categorize them
     for type_element in root.findall('type'):
-        name = type_element.get('name')
+        name = type_element.get('name')  # Get the name attribute of the 'type' element
         for category, condition in categories.items():
-            # Use element itself for 'containers', 'vehicleParts', 'weapons', and 'tools' to allow category-based assignment
-            if category in ['containers', 'vehicleParts', 'weapons', 'tools', 'food', 'clothes'] and condition(type_element):
+            # Use the element itself for some categories to allow category-based assignment
+            if category in ['containers', 'vehicleParts', 'weapons', 'tools', 'food', 'clothes', 'explosives'] and condition(type_element):
                 categorized_data[category].append(type_element)
                 logging.info(f"Categorized element '{name}' as '{category}'")
                 break
-            elif category not in ['containers', 'vehicleParts', 'weapons', 'tools', 'food', 'clothes'] and condition(name):
+            elif category not in ['containers', 'vehicleParts', 'weapons', 'tools', 'food', 'clothes', 'explosives'] and condition(name):
                 categorized_data[category].append(type_element)
                 logging.info(f"Categorized element '{name}' as '{category}'")
                 break
@@ -149,13 +196,14 @@ def organize_xml_contents():
         if os.path.exists(original_file_path):
             os.rename(original_file_path, backup_file_path)
         else:
+            # Log an error if the original file is not found
             logging.error("The specified file 'types.xml' was not found.")
             return
 
     # Parse the XML file (use 'types.xml' in debug mode, 'types.bk' in normal mode)
     tree = ET.parse(original_file_path if DEBUG_MODE else backup_file_path)
     root = tree.getroot()
-    os.makedirs(types_dir, exist_ok=True)
+    os.makedirs(types_dir, exist_ok=True)  # Create the 'types' directory if it does not exist
 
     # Categorize the elements in the XML and save them to separate files
     categorized_data = categorize_elements(root)
